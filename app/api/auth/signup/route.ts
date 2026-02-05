@@ -1,11 +1,9 @@
-import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
-import bcrypt from 'bcryptjs'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
 const signupSchema = z.object({
-    username: z.string().min(3, "Username must be at least 3 characters"),
+    email: z.string().email("Valid email is required"),
     password: z.string().min(6, "Password must be at least 6 characters"),
 })
 
@@ -21,35 +19,22 @@ export async function POST(req: NextRequest) {
             )
         }
 
-        const { username, password } = result.data
+        const { email, password } = result.data
 
-        const existingUser = await db.user.findUnique({
-            where: { username },
+        const supabase = await createServerSupabaseClient()
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
         })
 
-        if (existingUser) {
-            return NextResponse.json(
-                { error: "Username already taken" },
-                { status: 409 }
-            )
+        if (error) {
+            return NextResponse.json({ error: error.message }, { status: 400 })
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10)
-
-        const user = await db.user.create({
-            data: {
-                username,
-                password: hashedPassword,
-            },
+        return NextResponse.json({
+            success: true,
+            requiresEmailConfirmation: !data.session,
         })
-
-        const session = await getSession()
-        session.userId = user.id
-        session.username = user.username
-        session.isLoggedIn = true
-        await session.save()
-
-        return NextResponse.json({ success: true })
     } catch (error) {
         console.error("Signup error:", error)
         return NextResponse.json(

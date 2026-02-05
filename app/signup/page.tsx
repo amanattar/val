@@ -7,12 +7,14 @@ import { useState } from 'react'
 export default function Signup() {
     const router = useRouter()
     const [error, setError] = useState("")
+    const [info, setInfo] = useState("")
     const [loading, setLoading] = useState(false)
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
         setLoading(true)
         setError("")
+        setInfo("")
 
         const formData = new FormData(e.currentTarget)
         const data = Object.fromEntries(formData)
@@ -28,6 +30,9 @@ export default function Signup() {
         if (!res.ok) {
             setError(json.error)
             setLoading(false)
+        } else if (json.requiresEmailConfirmation) {
+            setInfo("Check your email to confirm your account before logging in.")
+            setLoading(false)
         } else {
             router.push('/dashboard')
             router.refresh()
@@ -41,13 +46,13 @@ export default function Signup() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                         <input
-                            name="username"
-                            type="text"
+                            name="email"
+                            type="email"
                             required
                             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pink-500 bg-white/50"
-                            placeholder="choose_a_username"
+                            placeholder="you@example.com"
                         />
                     </div>
 
@@ -63,6 +68,7 @@ export default function Signup() {
                     </div>
 
                     {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                    {info && <p className="text-green-600 text-sm text-center">{info}</p>}
 
                     <button
                         type="submit"

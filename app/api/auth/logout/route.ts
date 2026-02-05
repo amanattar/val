@@ -1,8 +1,8 @@
-import { getSession } from '@/lib/session'
-import { NextRequest, NextResponse } from 'next/server'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
 
-export async function POST(req: NextRequest) {
-    const session = await getSession()
-    session.destroy()
+export async function POST() {
+    const supabase = await createServerSupabaseClient()
+    await supabase.auth.signOut()
     return NextResponse.json({ success: true })
 }

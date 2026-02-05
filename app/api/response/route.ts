@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
@@ -10,14 +10,23 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Page ID required" }, { status: 400 })
         }
 
-        await db.page.update({
-            where: { id: pageId },
-            data: {
+        const supabase = await createServerSupabaseClient()
+        const { error: updateError } = await supabase
+            .from('pages')
+            .update({
                 responded: true,
                 response: true,
-                responseAt: new Date(),
-            },
-        })
+                response_at: new Date().toISOString(),
+            })
+            .eq('id', pageId)
+
+        if (updateError) {
+            console.error("Response update error:", updateError)
+            return NextResponse.json(
+                { error: "Internal server error" },
+                { status: 500 }
+            )
+        }
 
         return NextResponse.json({ success: true })
     } catch (error) {

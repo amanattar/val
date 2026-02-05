@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import ValentineClient from '@/components/valentine-client'
 
@@ -8,23 +8,33 @@ interface PageProps {
 
 export default async function ValentinePage({ params }: PageProps) {
     const { id } = await params
-    const page = await db.page.findUnique({
-        where: { id },
-    })
+    const supabase = await createServerSupabaseClient()
+    const { data: page, error: pageError } = await supabase
+        .from('pages')
+        .select('id, valentine_name, visits')
+        .eq('id', id)
+        .maybeSingle()
 
-    if (!page) {
+    if (pageError || !page) {
+        if (pageError) {
+            console.error("Page lookup error:", pageError)
+        }
         notFound()
     }
 
     // Increment visits (optional but fun)
-    await db.page.update({
-        where: { id },
-        data: { visits: { increment: 1 } },
-    })
+    const { error: visitError } = await supabase
+        .from('pages')
+        .update({ visits: (page.visits ?? 0) + 1 })
+        .eq('id', id)
+
+    if (visitError) {
+        console.error("Visit increment error:", visitError)
+    }
 
     return (
         <div className="min-h-[100svh] grid place-items-center bg-[radial-gradient(circle_at_top,var(--bg2),var(--bg1))] font-sans overflow-hidden p-4">
-            <ValentineClient name={page.valentineName} id={page.id} />
+            <ValentineClient name={page.valentine_name} id={page.id} />
         </div>
     )
 }

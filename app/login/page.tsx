@@ -41,13 +41,13 @@ export default function Login() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                         <input
-                            name="username"
-                            type="text"
+                            name="email"
+                            type="email"
                             required
                             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pink-500 bg-white/50"
-                            placeholder="your_username"
+                            placeholder="you@example.com"
                         />
                     </div>
 

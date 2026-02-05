@@ -1,5 +1,4 @@
-import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
@@ -8,12 +7,17 @@ const createPageSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
-    const session = await getSession()
-    if (!session.isLoggedIn || !session.userId) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
     try {
+        const supabase = await createServerSupabaseClient()
+        const {
+            data: { user },
+            error: userError,
+        } = await supabase.auth.getUser()
+
+        if (userError || !user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        }
+
         const body = await req.json()
         const result = createPageSchema.safeParse(body)
 
@@ -26,12 +30,22 @@ export async function POST(req: NextRequest) {
 
         const { valentineName } = result.data
 
-        const page = await db.page.create({
-            data: {
-                valentineName,
-                creatorId: session.userId,
-            },
-        })
+        const { data: page, error: createPageError } = await supabase
+            .from('pages')
+            .insert({
+                valentine_name: valentineName,
+                creator_id: user.id,
+            })
+            .select('id')
+            .single()
+
+        if (createPageError || !page) {
+            console.error("Create page error:", createPageError)
+            return NextResponse.json(
+                { error: "Internal server error" },
+                { status: 500 }
+            )
+        }
 
         return NextResponse.json({ success: true, pageId: page.id })
     } catch (error) {

@@ -1,5 +1,4 @@
-import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import CreatePageForm from './create-form'
@@ -7,15 +6,24 @@ import { LogOut, ExternalLink, Heart } from 'lucide-react'
 import LogoutButton from './logout-button'
 
 export default async function Dashboard() {
-    const session = await getSession()
-    if (!session.isLoggedIn || !session.userId) {
+    const supabase = await createServerSupabaseClient()
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
         redirect('/login')
     }
 
-    const pages = await db.page.findMany({
-        where: { creatorId: session.userId },
-        orderBy: { createdAt: 'desc' },
-    })
+    const { data: pages, error: pagesError } = await supabase
+        .from('pages')
+        .select('id, valentine_name, responded, response_at, created_at')
+        .eq('creator_id', user.id)
+        .order('created_at', { ascending: false })
+
+    if (pagesError) {
+        console.error("Dashboard pages error:", pagesError)
+    }
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -24,7 +32,7 @@ export default async function Dashboard() {
                     Valentine's Tracker
                 </div>
                 <div className="flex items-center gap-4">
-                    <span className="text-gray-600">Hi, {session.username}</span>
+                    <span className="text-gray-600">Hi, {user.email ?? 'there'}</span>
                     <LogoutButton />
                 </div>
             </nav>
@@ -44,7 +52,7 @@ export default async function Dashboard() {
 
                     {/* List Pages */}
                     <div className="md:col-span-2 space-y-4">
-                        {pages.length === 0 ? (
+                        {!pages || pages.length === 0 ? (
                             <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-gray-200 text-gray-400">
                                 You haven't created any pages yet.
                             </div>
@@ -52,7 +60,7 @@ export default async function Dashboard() {
                             pages.map((page) => (
                                 <div key={page.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between transition hover:shadow-md">
                                     <div>
-                                        <h3 className="text-lg font-bold text-gray-800">{page.valentineName}</h3>
+                                        <h3 className="text-lg font-bold text-gray-800">{page.valentine_name}</h3>
                                         <div className="flex items-center gap-2 mt-1">
                                             <a
                                                 href={`/p/${page.id}`}
@@ -62,7 +70,7 @@ export default async function Dashboard() {
                                                 /p/{page.id} <ExternalLink size={12} />
                                             </a>
                                             <span className="text-gray-300">•</span>
-                                            <span className="text-xs text-gray-400">Created {new Date(page.createdAt).toLocaleDateString()}</span>
+                                            <span className="text-xs text-gray-400">Created {new Date(page.created_at).toLocaleDateString()}</span>
                                         </div>
                                     </div>
 
@@ -74,9 +82,9 @@ export default async function Dashboard() {
                                         ) : (
                                             <span className="text-gray-400 text-sm bg-gray-50 px-3 py-1 rounded-full">Waiting...</span>
                                         )}
-                                        {page.responded && page.responseAt && (
+                                        {page.responded && page.response_at && (
                                             <span className="text-xs text-gray-400 mt-1">
-                                                at {new Date(page.responseAt).toLocaleTimeString()}
+                                                at {new Date(page.response_at).toLocaleTimeString()}
                                             </span>
                                         )}
                                     </div>
