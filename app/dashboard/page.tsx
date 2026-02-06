@@ -17,7 +17,7 @@ export default async function Dashboard() {
 
     const { data: pages, error: pagesError } = await supabase
         .from('pages')
-        .select('id, valentine_name, responded, response_at, created_at')
+        .select('id, slug, valentine_name, responded, response_at, created_at')
         .eq('creator_id', user.id)
         .order('created_at', { ascending: false })
 
@@ -57,19 +57,21 @@ export default async function Dashboard() {
                                 You haven't created any pages yet.
                             </div>
                         ) : (
-                            pages.map((page) => (
+                            pages.map((page) => {
+                                const sharePath = `/p/${page.slug ?? page.id}`
+                                return (
                                 <div key={page.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 sm:gap-0 sm:items-center justify-between transition hover:shadow-md">
                                     <div>
                                         <h3 className="text-lg font-bold text-gray-800">{page.valentine_name}</h3>
                                         <div className="flex flex-wrap items-center gap-2 mt-1">
                                             <a
-                                                href={`/p/${page.id}`}
+                                                href={sharePath}
                                                 target="_blank"
                                                 className="text-sm text-blue-500 hover:underline flex items-center gap-1 break-all"
                                             >
-                                                /p/{page.id} <ExternalLink size={12} />
+                                                {sharePath} <ExternalLink size={12} />
                                             </a>
-                                            <CopyLinkButton path={`/p/${page.id}`} />
+                                            <CopyLinkButton path={sharePath} />
                                             <span className="text-gray-300">•</span>
                                             <span className="text-xs text-gray-400">Created {new Date(page.created_at).toLocaleDateString()}</span>
                                         </div>
@@ -90,7 +92,8 @@ export default async function Dashboard() {
                                         )}
                                     </div>
                                 </div>
-                            ))
+                                )
+                            })
                         )}
                     </div>
                 </div>

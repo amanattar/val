@@ -6,13 +6,18 @@ interface PageProps {
     params: Promise<{ id: string }>
 }
 
+function isUuid(value: string) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+}
+
 export default async function ValentinePage({ params }: PageProps) {
     const { id } = await params
     const supabase = await createServerSupabaseClient()
+    const lookupColumn = isUuid(id) ? 'id' : 'slug'
     const { data: page, error: pageError } = await supabase
         .from('pages')
         .select('id, valentine_name, visits')
-        .eq('id', id)
+        .eq(lookupColumn, id)
         .maybeSingle()
 
     if (pageError || !page) {
@@ -26,7 +31,7 @@ export default async function ValentinePage({ params }: PageProps) {
     const { error: visitError } = await supabase
         .from('pages')
         .update({ visits: (page.visits ?? 0) + 1 })
-        .eq('id', id)
+        .eq('id', page.id)
 
     if (visitError) {
         console.error("Visit increment error:", visitError)

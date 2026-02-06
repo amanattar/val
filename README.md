@@ -25,6 +25,7 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 1. Create a Supabase project.
 1. Run the SQL in `supabase/schema.sql` in the Supabase SQL editor.
 1. Run the SQL in `supabase/rls.sql` in the Supabase SQL editor.
+1. If upgrading an existing project, run `supabase/slug_migration.sql` once.
 1. Add the following environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
