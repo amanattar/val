@@ -7,6 +7,7 @@ export default function ValentineClient({ name, id }: { name: string; id: string
     const [yesPressed, setYesPressed] = useState(false)
     const [yesScale, setYesScale] = useState(1)
     const [noBtnStyle, setNoBtnStyle] = useState<React.CSSProperties>({})
+    const responseSentRef = useRef(false)
 
     const yesBtnRef = useRef<HTMLButtonElement>(null)
     const noBtnRef = useRef<HTMLButtonElement>(null)
@@ -46,14 +47,35 @@ export default function ValentineClient({ name, id }: { name: string; id: string
                 });
             }, 300);
 
-            // Trigger API call
-            fetch('/api/response', {
+        }
+    }, [yesPressed])
+
+    const submitResponse = async () => {
+        if (responseSentRef.current) return
+        responseSentRef.current = true
+
+        const payload = JSON.stringify({ pageId: id })
+
+        try {
+            await fetch('/api/response', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pageId: id }),
+                body: payload,
+                keepalive: true,
             })
+        } catch {
+            // Fallback for mobile browsers when the page backgrounds/closes quickly.
+            if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+                const blob = new Blob([payload], { type: 'application/json' })
+                navigator.sendBeacon('/api/response', blob)
+            }
         }
-    }, [yesPressed, id])
+    }
+
+    const handleYesClick = () => {
+        setYesPressed(true)
+        void submitResponse()
+    }
 
     // No button running away logic
     const moveNo = (clientX: number, clientY: number) => {
@@ -160,7 +182,7 @@ export default function ValentineClient({ name, id }: { name: string; id: string
                             <button
                                 ref={yesBtnRef}
                                 id="yesBtn"
-                                onClick={() => setYesPressed(true)}
+                                onClick={handleYesClick}
                                 style={{
                                     transform: `translateY(-50%) scale(${yesScale})`,
                                     left: '14%',
