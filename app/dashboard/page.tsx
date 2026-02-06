@@ -1,9 +1,9 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import CreatePageForm from './create-form'
-import { LogOut, ExternalLink, Heart } from 'lucide-react'
+import { ExternalLink, Heart } from 'lucide-react'
 import LogoutButton from './logout-button'
+import CopyLinkButton from './copy-link-button'
 
 export default async function Dashboard() {
     const supabase = await createServerSupabaseClient()
@@ -27,12 +27,12 @@ export default async function Dashboard() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <nav className="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center">
+            <nav className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 flex flex-col sm:flex-row gap-3 sm:gap-0 justify-between sm:items-center">
                 <div className="text-xl font-bold bg-gradient-to-r from-pink-500 to-rose-600 bg-clip-text text-transparent">
                     Valentine's Tracker
                 </div>
-                <div className="flex items-center gap-4">
-                    <span className="text-gray-600">Hi, {user.email ?? 'there'}</span>
+                <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-4">
+                    <span className="text-gray-600 text-sm sm:text-base truncate">Hi, {user.email ?? 'there'}</span>
                     <LogoutButton />
                 </div>
             </nav>
@@ -58,17 +58,18 @@ export default async function Dashboard() {
                             </div>
                         ) : (
                             pages.map((page) => (
-                                <div key={page.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between transition hover:shadow-md">
+                                <div key={page.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 sm:gap-0 sm:items-center justify-between transition hover:shadow-md">
                                     <div>
                                         <h3 className="text-lg font-bold text-gray-800">{page.valentine_name}</h3>
-                                        <div className="flex items-center gap-2 mt-1">
+                                        <div className="flex flex-wrap items-center gap-2 mt-1">
                                             <a
                                                 href={`/p/${page.id}`}
                                                 target="_blank"
-                                                className="text-sm text-blue-500 hover:underline flex items-center gap-1"
+                                                className="text-sm text-blue-500 hover:underline flex items-center gap-1 break-all"
                                             >
                                                 /p/{page.id} <ExternalLink size={12} />
                                             </a>
+                                            <CopyLinkButton path={`/p/${page.id}`} />
                                             <span className="text-gray-300">•</span>
                                             <span className="text-xs text-gray-400">Created {new Date(page.created_at).toLocaleDateString()}</span>
                                         </div>

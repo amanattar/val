@@ -2,12 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 import confetti from 'canvas-confetti'
-import { useParams } from 'next/navigation'
 
 export default function ValentineClient({ name, id }: { name: string; id: string }) {
     const [yesPressed, setYesPressed] = useState(false)
     const [yesScale, setYesScale] = useState(1)
-    const [noPosition, setNoPosition] = useState({ x: 0, y: 0 })
     const [noBtnStyle, setNoBtnStyle] = useState<React.CSSProperties>({})
 
     const yesBtnRef = useRef<HTMLButtonElement>(null)
@@ -70,13 +68,14 @@ export default function ValentineClient({ name, id }: { name: string; id: string
         dx /= mag;
         dy /= mag;
 
-        const distance = 150;
+        const distance = Math.min(150, z.width * 0.35);
         let newLeft = (b.left - z.left) + dx * distance;
         let newTop = (b.top - z.top) + dy * distance;
 
-        // Clamp within zone
-        newLeft = Math.max(0, Math.min(newLeft, z.width - b.width));
-        newTop = Math.max(0, Math.min(newTop, z.height - b.height));
+        // Clamp within zone with a small inset for easier tapping on touch screens.
+        const inset = 8;
+        newLeft = Math.max(inset, Math.min(newLeft, z.width - b.width - inset));
+        newTop = Math.max(inset, Math.min(newTop, z.height - b.height - inset));
 
         setNoBtnStyle({
             position: 'absolute',
@@ -106,11 +105,10 @@ export default function ValentineClient({ name, id }: { name: string; id: string
     }
 
     // Handle generic clicks on No (if they manage to click it)
-    const handleNoClick = (e: React.MouseEvent) => {
+    const handleNoClick = (e: React.SyntheticEvent) => {
         e.preventDefault();
         // Force move
         if (noBtnRef.current && zoneRef.current) {
-            const z = zoneRef.current.getBoundingClientRect();
             const b = noBtnRef.current.getBoundingClientRect();
             moveNo(b.left + b.width / 2, b.top + b.height / 2);
         }
@@ -123,7 +121,7 @@ export default function ValentineClient({ name, id }: { name: string; id: string
                 className="fixed inset-0 w-screen h-screen pointer-events-none z-[9999]"
             />
 
-            <main className="card backdrop-blur-[10px] bg-white/80 rounded-[22px] p-[26px_22px] w-[min(720px,92vw)] text-center shadow-[0_18px_60px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in duration-700">
+            <main className="card backdrop-blur-[10px] bg-white/80 rounded-[22px] p-[22px_16px] sm:p-[26px_22px] w-[min(720px,94vw)] text-center shadow-[0_18px_60px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in duration-700">
 
                 {/* Animal SVG */}
                 <svg className="block w-[min(260px,80vw)] mx-auto mb-2 drop-shadow-[0_10px_14px_rgba(0,0,0,0.12)]" viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg">
@@ -156,7 +154,7 @@ export default function ValentineClient({ name, id }: { name: string; id: string
                         <section
                             ref={zoneRef}
                             id="zone"
-                            className="relative w-[min(520px,92%)] h-[150px] mx-auto touch-none"
+                            className="relative w-[min(520px,96%)] h-[190px] sm:h-[150px] mx-auto touch-none"
                             onPointerMove={handlePointerMove}
                         >
                             <button
@@ -165,9 +163,9 @@ export default function ValentineClient({ name, id }: { name: string; id: string
                                 onClick={() => setYesPressed(true)}
                                 style={{
                                     transform: `translateY(-50%) scale(${yesScale})`,
-                                    left: '18%',
+                                    left: '14%',
                                 }}
-                                className="absolute top-1/2 p-[16px_24px] text-[18px] font-extrabold rounded-full border-0 cursor-pointer shadow-[0_10px_24px_rgba(0,0,0,0.14)] select-none transition-transform duration-100 ease-out bg-[#ff3b7a] hover:bg-[#ff1f68] text-white"
+                                className="absolute top-1/2 p-[14px_20px] sm:p-[16px_24px] text-[17px] sm:text-[18px] min-w-[104px] min-h-[52px] font-extrabold rounded-full border-0 cursor-pointer shadow-[0_10px_24px_rgba(0,0,0,0.14)] select-none transition-transform duration-100 ease-out bg-[#ff3b7a] hover:bg-[#ff1f68] text-white"
                             >
                                 Yes
                             </button>
@@ -176,13 +174,14 @@ export default function ValentineClient({ name, id }: { name: string; id: string
                                 ref={noBtnRef}
                                 id="noBtn"
                                 onClick={handleNoClick}
+                                onTouchStart={handleNoClick}
                                 style={{
                                     ...noBtnStyle,
-                                    left: noBtnStyle.left || '62%',
+                                    left: noBtnStyle.left || '60%',
                                     top: noBtnStyle.top || '50%',
                                     transform: noBtnStyle.transform || 'translateY(-50%)'
                                 }}
-                                className="absolute p-[16px_24px] text-[18px] font-extrabold rounded-full border-0 cursor-pointer shadow-[0_10px_24px_rgba(0,0,0,0.14)] select-none transition-[top,left] duration-100 ease-out bg-[#e5e7eb] text-[#111827]"
+                                className="absolute p-[14px_20px] sm:p-[16px_24px] text-[17px] sm:text-[18px] min-w-[104px] min-h-[52px] font-extrabold rounded-full border-0 cursor-pointer shadow-[0_10px_24px_rgba(0,0,0,0.14)] select-none transition-[top,left] duration-100 ease-out bg-[#e5e7eb] text-[#111827]"
                             >
                                 No
                             </button>
