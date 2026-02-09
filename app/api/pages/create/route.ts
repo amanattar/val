@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { ensureUserFromCookie } from '@/lib/user-val-session'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
@@ -24,14 +25,7 @@ function randomSuffix() {
 export async function POST(req: NextRequest) {
     try {
         const supabase = await createServerSupabaseClient()
-        const {
-            data: { user },
-            error: userError,
-        } = await supabase.auth.getUser()
-
-        if (userError || !user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-        }
+        const user = await ensureUserFromCookie(supabase)
 
         const body = await req.json()
         const result = createPageSchema.safeParse(body)
@@ -52,21 +46,20 @@ export async function POST(req: NextRequest) {
         for (let attempt = 0; attempt < 3; attempt++) {
             const slug = `${baseSlug}-${randomSuffix()}`
             const result = await supabase
-                .from('pages')
+                .from('val_pages')
                 .insert({
                     valentine_name: valentineName,
-                    creator_id: user.id,
+                    user_id: user.id,
                     slug,
                 })
                 .select('id, slug')
                 .single()
-
-            if (!result.error && result.data) {
+            createPageError = result.error
+            if (result.data) {
                 page = result.data
                 createPageError = null
                 break
             }
-            createPageError = result.error
         }
 
         if (createPageError || !page) {

@@ -1,25 +1,31 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { getUserFromCookie } from '@/lib/user-val-session'
 import CreatePageForm from './create-form'
 import { ExternalLink, Heart } from 'lucide-react'
-import LogoutButton from './logout-button'
 import CopyLinkButton from './copy-link-button'
 
 export default async function Dashboard() {
     const supabase = await createServerSupabaseClient()
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+    const user = await getUserFromCookie(supabase)
+    let pages: {
+        id: string
+        slug: string | null
+        valentine_name: string
+        responded: boolean
+        response_at: string | null
+        created_at: string
+    }[] | null = []
+    let pagesError: unknown = null
 
-    if (!user) {
-        redirect('/login')
+    if (user) {
+        const query = await supabase
+            .from('val_pages')
+            .select('id, slug, valentine_name, responded, response_at, created_at')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+        pages = query.data
+        pagesError = query.error
     }
-
-    const { data: pages, error: pagesError } = await supabase
-        .from('pages')
-        .select('id, slug, valentine_name, responded, response_at, created_at')
-        .eq('creator_id', user.id)
-        .order('created_at', { ascending: false })
 
     if (pagesError) {
         console.error("Dashboard pages error:", pagesError)
@@ -31,10 +37,9 @@ export default async function Dashboard() {
                 <div className="text-xl font-bold bg-gradient-to-r from-pink-500 to-rose-600 bg-clip-text text-transparent">
                     Valentine's Tracker
                 </div>
-                <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-4">
-                    <span className="text-gray-600 text-sm sm:text-base truncate">Hi, {user.email ?? 'there'}</span>
-                    <LogoutButton />
-                </div>
+                <span className="text-gray-600 text-sm sm:text-base truncate">
+                    Hi, {user?.display_name ?? 'there'}
+                </span>
             </nav>
 
             <main className="max-w-5xl mx-auto p-6 md:p-10">

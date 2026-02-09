@@ -15,7 +15,7 @@ export default async function ValentinePage({ params }: PageProps) {
     const supabase = await createServerSupabaseClient()
     const lookupColumn = isUuid(id) ? 'id' : 'slug'
     const { data: page, error: pageError } = await supabase
-        .from('pages')
+        .from('val_pages')
         .select('id, valentine_name, visits')
         .eq(lookupColumn, id)
         .maybeSingle()
@@ -29,7 +29,7 @@ export default async function ValentinePage({ params }: PageProps) {
 
     // Increment visits (optional but fun)
     const { error: visitError } = await supabase
-        .from('pages')
+        .from('val_pages')
         .update({ visits: (page.visits ?? 0) + 1 })
         .eq('id', page.id)
 

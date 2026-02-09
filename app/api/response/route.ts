@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
         const supabase = await createServerSupabaseClient()
         const { error: updateError } = await supabase
-            .from('pages')
+            .from('val_pages')
             .update({
                 responded: true,
                 response: true,
