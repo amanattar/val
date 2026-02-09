@@ -6,11 +6,23 @@ const USER_COOKIE = 'val_user_token'
 export type ValUser = {
   id: string
   display_name: string
+  email: string
   session_token: string
 }
 
-function randomGuestName() {
-  return `Guest-${Math.random().toString(36).slice(2, 6)}`
+function cookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: 'lax' as const,
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365,
+  }
+}
+
+export async function setSessionCookie(sessionToken: string) {
+  const cookieStore = await cookies()
+  cookieStore.set(USER_COOKIE, sessionToken, cookieOptions())
 }
 
 export async function getUserFromCookie(
@@ -23,7 +35,7 @@ export async function getUserFromCookie(
 
   const { data, error } = await supabase
     .from('user_val')
-    .select('id, display_name, session_token')
+    .select('id, display_name, email, session_token')
     .eq('session_token', token)
     .maybeSingle()
 
@@ -31,34 +43,32 @@ export async function getUserFromCookie(
   return data as ValUser
 }
 
-export async function ensureUserFromCookie(
-  supabase: SupabaseClient
-): Promise<ValUser> {
-  const cookieStore = await cookies()
-  const existing = await getUserFromCookie(supabase)
-  if (existing) return existing
-
+export async function createSessionForUser(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<string> {
   const sessionToken = crypto.randomUUID()
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('user_val')
-    .insert({
-      display_name: randomGuestName(),
-      session_token: sessionToken,
-    })
-    .select('id, display_name, session_token')
-    .single()
+    .update({ session_token: sessionToken })
+    .eq('id', userId)
 
-  if (error || !data) {
-    throw new Error('Failed to create local user session')
+  if (error) {
+    throw new Error('Failed to create user session')
   }
 
-  cookieStore.set(USER_COOKIE, sessionToken, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 365,
-  })
+  await setSessionCookie(sessionToken)
+  return sessionToken
+}
 
-  return data as ValUser
+export async function clearSessionFromCookie(supabase: SupabaseClient) {
+  const cookieStore = await cookies()
+  const token = cookieStore.get(USER_COOKIE)?.value
+  if (token) {
+    await supabase
+      .from('user_val')
+      .update({ session_token: crypto.randomUUID() })
+      .eq('session_token', token)
+  }
+  cookieStore.delete(USER_COOKIE)
 }

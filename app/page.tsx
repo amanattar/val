@@ -14,10 +14,16 @@ export default function Home() {
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Link
-            href="/dashboard"
+            href="/signup"
             className="w-full sm:w-auto px-8 py-4 bg-rose-500 hover:bg-rose-600 text-white text-lg font-bold rounded-full transition-all hover:scale-105 shadow-lg shadow-rose-500/30"
           >
-            Open Dashboard
+            Create Your Page
+          </Link>
+          <Link
+            href="/login"
+            className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-gray-50 text-gray-800 text-lg font-bold rounded-full border border-gray-200 transition-all hover:scale-105 shadow-md"
+          >
+            Login
           </Link>
         </div>
 

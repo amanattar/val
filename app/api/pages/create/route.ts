@@ -1,5 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { ensureUserFromCookie } from '@/lib/user-val-session'
+import { getUserFromCookie } from '@/lib/user-val-session'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
@@ -25,7 +25,10 @@ function randomSuffix() {
 export async function POST(req: NextRequest) {
     try {
         const supabase = await createServerSupabaseClient()
-        const user = await ensureUserFromCookie(supabase)
+        const user = await getUserFromCookie(supabase)
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        }
 
         const body = await req.json()
         const result = createPageSchema.safeParse(body)

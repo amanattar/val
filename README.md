@@ -29,7 +29,7 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-This version does not require login/signup pages. A local session cookie (`val_user_token`) is created automatically and mapped to `user_val`.
+This version uses custom auth (not Supabase Auth). Signup/Login data is stored in `user_val` (`email`, `password_hash`, `session_token`), and session state is maintained with the `val_user_token` cookie.
 
 ## Learn More
 

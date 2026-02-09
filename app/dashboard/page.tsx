@@ -1,12 +1,19 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { getUserFromCookie } from '@/lib/user-val-session'
+import { redirect } from 'next/navigation'
 import CreatePageForm from './create-form'
 import { ExternalLink, Heart } from 'lucide-react'
 import CopyLinkButton from './copy-link-button'
+import LogoutButton from './logout-button'
+
+export const dynamic = 'force-dynamic'
 
 export default async function Dashboard() {
     const supabase = await createServerSupabaseClient()
     const user = await getUserFromCookie(supabase)
+    if (!user) {
+        redirect('/login')
+    }
     let pages: {
         id: string
         slug: string | null
@@ -17,15 +24,13 @@ export default async function Dashboard() {
     }[] | null = []
     let pagesError: unknown = null
 
-    if (user) {
-        const query = await supabase
-            .from('val_pages')
-            .select('id, slug, valentine_name, responded, response_at, created_at')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-        pages = query.data
-        pagesError = query.error
-    }
+    const query = await supabase
+        .from('val_pages')
+        .select('id, slug, valentine_name, responded, response_at, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+    pages = query.data
+    pagesError = query.error
 
     if (pagesError) {
         console.error("Dashboard pages error:", pagesError)
@@ -37,9 +42,10 @@ export default async function Dashboard() {
                 <div className="text-xl font-bold bg-gradient-to-r from-pink-500 to-rose-600 bg-clip-text text-transparent">
                     Valentine's Tracker
                 </div>
-                <span className="text-gray-600 text-sm sm:text-base truncate">
-                    Hi, {user?.display_name ?? 'there'}
-                </span>
+                <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-4">
+                    <span className="text-gray-600 text-sm sm:text-base truncate">Hi, {user.display_name}</span>
+                    <LogoutButton />
+                </div>
             </nav>
 
             <main className="max-w-5xl mx-auto p-6 md:p-10">
